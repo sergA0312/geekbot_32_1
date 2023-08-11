@@ -1,57 +1,36 @@
-from aiogram.types import (
-    ReplyKeyboardMarkup,
-    KeyboardButton,
-    InlineKeyboardMarkup,
-    InlineKeyboardButton
-)
+import telebot
+import sqlite3
 
+# Подключение к базе данных
+conn = sqlite3.connect('users.db')
+cursor = conn.cursor()
 
-async def start_kb():
-    quiz_button = KeyboardButton("/quiz")
-    mark_up = ReplyKeyboardMarkup(one_time_keyboard=True,
-                                  resize_keyboard=True)
-
-    mark_up.add(quiz_button)
-    return mark_up
-
-
-async def quiz_1_keyboard():
-    markup = InlineKeyboardMarkup()
-    button_call_1 = InlineKeyboardButton(
-        "Следующая Викторина",
-        callback_data="button_call_1"
+# Создание таблицы, если она не существует
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY,
+        username TEXT,
+        first_name TEXT,
+        last_name TEXT
     )
-    markup.row(
-        button_call_1
-    )
-    return markup
+''')
+conn.commit()
 
+# Инициализация бота
+bot = good_nurik_bot. good_nurik_botBot('YOUR_BOT_TOKEN')
 
-async def quiz_2_keyboard():
-    markup = InlineKeyboardMarkup()
-    button_call_1 = InlineKeyboardButton(
-        "Male",
-        callback_data="answer_male"
-    )
-    button_call_2 = InlineKeyboardButton(
-        "Female",
-        callback_data="answer_female"
-    )
-    markup.row(
-        button_call_1,
-        button_call_2
-    )
-    return markup
+@bot.message_handler(commands=['start'])
+def handle_start(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    first_name = message.from_user.first_name
+    last_name = message.from_user.last_name
+    
+    # Запись пользователя в базу данных
+    cursor.execute('INSERT INTO users (id, username, first_name, last_name) VALUES (?, ?, ?, ?)', (user_id, username, first_name, last_name))
+    conn.commit()
+    
+    bot.reply_to(message, 'Вы были записаны в базу данных.')
 
-
-async def admin_select_user_keyboard():
-    markup = InlineKeyboardMarkup()
-    admin_user_list = InlineKeyboardButton(
-        "Список пользователей",
-        callback_data="admin_user_list"
-    )
-
-    markup.row(
-        admin_user_list
-    )
-    return markup
+# Запуск бота
+bot.polling()
